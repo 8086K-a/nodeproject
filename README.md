@@ -167,3 +167,4 @@ npm run test:backend:plan
 
 `run-automation.sh` 仍可用于多轮自动执行，但这种方式风险较高，更适合你已经确认任务拆解、权限策略和测试脚本都可靠之后再用。
 # nodeproject
+# nodeproject
