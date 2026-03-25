@@ -1,0 +1,163 @@
+{
+  "project": "ICVN",
+  "description": "关系/知识图谱编辑、任务入图、来源证据沉淀与版本管理系统（基于当前半成品代码基线）",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "ICVN 项目基线重构",
+      "description": "将旧的视频项目语义切换为当前 ICVN 半成品基线，统一架构文档、任务清单和进度记录",
+      "steps": [
+        "重写 architecture.md，明确当前项目是 ICVN 而不是 Spring FES Video",
+        "按现有代码结构重写 task.json，任务从半成品补完出发而不是从零搭建",
+        "在 progress.txt 中记录新的基线说明，澄清代码现状与后续方向"
+      ],
+      "passes": true
+    },
+    {
+      "id": 2,
+      "title": "运行环境与说明文档对齐",
+      "description": "补齐 ICVN 当前真实运行方式，修正 README、初始化步骤和环境变量说明，确保新 agent 能按文档启动项目",
+      "steps": [
+        "检查 README、init.sh、CLAUDE.md 中所有旧目录名和旧项目语义，统一替换为 ICVN 当前目录结构",
+        "明确 ICVN-Project-master 的启动命令、数据库初始化命令和 .env.local 要求",
+        "补充一个最小上手流程：初始化数据库、启动 Next.js、访问首页、验证默认图谱",
+        "确保文档不再引用 Supabase、hello-nextjs 或视频生成流程"
+      ],
+      "passes": true
+    },
+    {
+      "id": 3,
+      "title": "MySQL 基线校验与初始化闭环",
+      "description": "验证当前 MySQL schema、默认图谱和初始化脚本是否可稳定运行，为后续联调提供可信环境",
+      "steps": [
+        "核对 db/mysql/init.sql 中图谱、任务、版本、来源、证据等核心表是否与 domain models 对齐",
+        "验证 tools/init-db.mjs 和 tools/test-db-connection.mjs 在当前环境下可用",
+        "确认默认 graphId=default 的初始化逻辑稳定存在",
+        "补充缺失的初始化说明或修复明显错误，使数据库可一键进入可联调状态"
+      ],
+      "passes": true
+    },
+    {
+      "id": 4,
+      "title": "后端最小任务闭环验收",
+      "description": "以最小样例验证后端主流程 create task -> get result -> apply -> graph view 是否真实可用",
+      "steps": [
+        "调用 POST /api/tasks 创建 text 或 document 类型任务",
+        "调用 GET /api/tasks/{taskId}、GET /api/tasks/{taskId}/result、GET /api/tasks/{taskId}/events 验证状态与结果结构",
+        "调用 POST /api/tasks/{taskId}/apply，确认 nodes、edges、source、evidence、history 与 version 写入行为符合预期",
+        "调用 GET /api/graph/view 验证应用后的图谱确实可见",
+        "修复这条主链路上的参数、事务、状态流转或返回结构问题"
+      ],
+      "passes": true
+    },
+    {
+      "id": 5,
+      "title": "首页默认加载真实图谱",
+      "description": "让首页从仅使用示例数据，升级为优先读取后端默认图谱，并在无数据时优雅回退",
+      "steps": [
+        "梳理 GraphEditor 当前示例文档、本地工作区和后端图谱的优先级关系",
+        "接入 GET /api/graph/view，优先加载 default graph 的真实 nodes/edges",
+        "当后端无数据或请求失败时，才回退到 sample graph，并给出明确状态提示",
+        "保证加载真实图谱后仍兼容当前工作区、撤销重做和画布操作"
+      ],
+      "passes": true
+    },
+    {
+      "id": 6,
+      "title": "图谱编辑持久化联调",
+      "description": "验证并补齐前端编辑器对节点和边的创建、更新、删除持久化，使画布编辑结果真正写入后端",
+      "steps": [
+        "核对 create/update/delete node 与 edge 的前端调用路径是否全部接入 openApiClient",
+        "验证节点属性、位置、边关系等字段在保存后重新加载仍能正确恢复",
+        "修复删除节点时关联边、来源、证据或历史显示异常的问题",
+        "为关键持久化操作补充清晰的 loading、成功和失败反馈"
+      ],
+      "passes": true
+    },
+    {
+      "id": 7,
+      "title": "任务中心与导入面板产品化",
+      "description": "把当前散落在 GraphEditor 内的任务入口整理为更清晰的任务中心体验，支撑文本与文档导入",
+      "steps": [
+        "梳理 use-document-import-flow 与 GraphEditor 中现有任务入口、队列状态和文档上传交互",
+        "补充任务列表、当前状态、错误信息、完成结果和重试入口",
+        "区分 text task 与 document task 的创建路径和展示方式",
+        "确保任务完成后可以一键查看结果、应用入图或跳转到图谱定位结果"
+      ],
+      "passes": false
+    },
+    {
+      "id": 8,
+      "title": "真实 AI 解析接入替换 synthetic parser",
+      "description": "将当前 synthetic-task-parser 的过渡实现替换为真实 AI provider，并保留标准化结果结构",
+      "steps": [
+        "识别 createTask/createAiParseJob 里 synthetic parse result 的生成位置和边界",
+        "设计 provider 配置、请求封装、错误处理、重试和状态流转策略",
+        "接入真实模型后仍输出兼容 AiParseResult 的 normalized result 结构",
+        "保留开发模式 fallback，避免在外部依赖缺失时完全阻塞主流程",
+        "明确记录哪些配置需要人工提供，阻塞时不要错误地将任务标记完成"
+      ],
+      "passes": false
+    },
+    {
+      "id": 9,
+      "title": "来源、证据与历史面板联调",
+      "description": "让节点和边的详情不止展示结构，还能展示来源、证据和历史记录，体现 ICVN 的核心价值",
+      "steps": [
+        "接入 query node detail、sources、history 与 edge detail 相关接口",
+        "在前端为选中节点/边提供详情面板或侧边栏区域",
+        "展示 source title、excerpt、relation、speaker、pageNo 等关键证据字段",
+        "验证任务应用后生成的 source_records、evidence_records、graph_change_history 在 UI 中可见"
+      ],
+      "passes": false
+    },
+    {
+      "id": 10,
+      "title": "版本系统前端化",
+      "description": "把后端已有的版本创建、版本详情和回滚能力做成前端可操作的时间线/列表界面",
+      "steps": [
+        "接入 versions 列表、详情和 rollback 接口",
+        "展示 versionNo、name、trigger、createdAt、snapshot summary 等核心信息",
+        "支持用户从 UI 发起创建版本和回滚版本操作",
+        "回滚成功后刷新图谱视图，并清晰提示当前处于哪个版本状态"
+      ],
+      "passes": false
+    },
+    {
+      "id": 11,
+      "title": "搜索、关系和路径查询 UI",
+      "description": "补齐 Query API 对应的前端检索与分析面板，让图谱不只是能画，还能查",
+      "steps": [
+        "接入节点搜索、邻接关系查询、路径查询和子图查询接口",
+        "提供关键词、类型、来源等必要筛选条件",
+        "将查询结果与画布联动，支持聚焦节点、高亮路径或切换到子图视图",
+        "处理空结果、错误状态和大结果集的展示体验"
+      ],
+      "passes": false
+    },
+    {
+      "id": 12,
+      "title": "后端测试基线落地",
+      "description": "参考 BACKEND_TEST_PLAN.md 为当前后端建立最小可执行测试基线，优先覆盖最关键主流程",
+      "steps": [
+        "优先覆盖 api.ts、utils.ts 中关键纯函数和响应包装逻辑",
+        "补充 tasks、graph、versions 相关 repository 或 API 集成测试",
+        "至少覆盖 create task、get result、apply task、get graph view、create version、rollback version 这些核心路径",
+        "明确测试数据库准备与清理策略，避免污染开发数据"
+      ],
+      "passes": true
+    },
+    {
+      "id": 13,
+      "title": "ICVN 最小验收与交付文档",
+      "description": "在主流程可运行后，补齐最小验收清单和用户向导，确保项目可持续交接",
+      "steps": [
+        "整理一套最小手工验收脚本：启动、建任务、入图、查详情、建版本、回滚",
+        "更新 README，明确当前完成度、已知限制和推荐使用方式",
+        "补充阻塞说明模板，明确何时需要真实数据库或真实 AI 凭证",
+        "确保后续 agent 接手时，能从文档判断当前项目已完成到什么程度"
+      ],
+      "passes": true
+    }
+  ]
+}

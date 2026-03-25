@@ -1,0 +1,87 @@
+## 2026-02-09 - Task: Project infrastructure setup
+
+### What was done:
+- Created `CLAUDE.md`, `task.json`, `init.sh`, and `progress.txt`
+- Created the initial Next.js application scaffold
+
+### Testing:
+- Verified infrastructure files exist
+- Built the initial app successfully
+
+### Notes:
+- This historical entry was reconstructed after `progress.txt` became empty in the current workspace
+
+---
+
+## 2026-03-25 - Task: ICVN 项目基线重构
+
+### What was done:
+- 重写 `architecture.md`，将项目基线从旧语义切换到当前 ICVN 半成品
+- 重写 `task.json`，将后续任务改为围绕当前代码基线补完
+- 明确当前应用目录为 `ICVN-Project-master/`
+
+### Testing:
+- 核对了 `app/page.tsx`、`openapi.yaml`、`lib/domain/models.ts`、`lib/server/repository.ts`、`db/mysql/init.sql`
+
+### Notes:
+- 后续 agent 应以 ICVN 当前实现为准，不再参考旧的视频项目需求
+
+---
+
+## 2026-03-25 - Task: 运行环境与说明文档对齐
+
+### What was done:
+- 重写根目录 `README.md` 与 `ICVN-Project-master/README.md`
+- 更新 `CLAUDE.md` 与 `init.sh`，统一启动命令、环境变量和初始化说明
+- 将 `task.json` 中任务 2 标记为完成
+
+### Testing:
+- 执行 `./init.sh`
+- 执行 `node --env-file=.env.local tools/test-db-connection.mjs`
+- 执行 `node --env-file=.env.local tools/init-db.mjs`
+
+### Notes:
+- 当时首页默认仍展示本地 sample graph；该限制已在后续任务 5 中修复
+
+---
+
+## 2026-03-25 - Task: MySQL 基线校验与初始化闭环 / 后端最小任务闭环验收 / 后端测试基线落地 / ICVN 最小验收与交付文档
+
+### What was done:
+- 运行并验证 `tools/test-db-connection.mjs`、`tools/init-db.mjs`，确认 MySQL schema、核心表和默认图谱数据链路可用
+- 运行 `npm run test:backend:plan`，确认 create task -> get result -> apply -> graph view -> create version -> rollback 的后端闭环通过
+- 在文档中补充最小验收脚本、当前完成度、已知限制和阻塞模板，方便后续 agent 或人工接手
+- 将任务 3、4、12、13 标记为完成
+- 为任务 8 增加了可选的 OpenAI 兼容 provider 接入框架，并保留无凭证时的 fallback 行为
+
+### Testing:
+- `./init.sh`
+- `cd ICVN-Project-master && node --env-file=.env.local tools/test-db-connection.mjs`
+- `cd ICVN-Project-master && node --env-file=.env.local tools/init-db.mjs`
+- `cd ICVN-Project-master && npm run test:backend:plan`
+
+### Notes:
+- 任务 8 代码路径已具备真实 provider + fallback，但当前没有提供 `AI_PROVIDER_API_KEY` 等真实配置，因此不能将任务 8 误标为完成
+- 任务 5、6、7、9、10、11 主要依赖前端 UI 联调；在没有浏览器自动化验收能力的当前环境下，不应直接标记为完成
+
+---
+
+## 2026-03-25 - Task: 首页默认加载真实图谱 / 图谱编辑持久化联调
+
+### What was done:
+- 首页启动后会自动尝试加载后端 `default` 图谱，并将其作为一个独立的“后端文件”加入工作区
+- 当后端无数据或请求失败时，页面会保留本地示例/工作区，并显示明确状态提示
+- 为后端文件接入最小前端持久化闭环：节点创建、位置/文本更新、删除，以及边创建、标签/样式更新、删除，都会按差异回写到后端 API
+- 为后端回写增加显式状态文案；当用户在后端文件上点击“重置”时，会新建本地示例文件而不是直接覆盖后端图谱
+- 扩展后端节点/边属性到画布数据的映射，确保重新从后端加载后保留节点样式、图片和边样式等信息
+- 将任务 5、6 标记为完成
+
+### Testing:
+- `cd ICVN-Project-master && npm run build`
+- `cd ICVN-Project-master && npm run dev -- --hostname 127.0.0.1 --port 3001`
+- `cd ICVN-Project-master && npm run test:backend:plan`
+- 本地浏览器自动化验证：首页 3 秒内自动切换到后端默认图谱；点击“重置”会新建本地示例文件；切回“从后端加载”可恢复默认图谱；在后端图谱下点击“添加矩形”后图形数从 21 增至 22，点击“删除图形”后恢复为 21
+
+### Notes:
+- 任务 7、9、10、11 仍是待办，主要是任务中心、详情/证据/历史、版本面板和查询 UI 的产品化
+- 任务 8 仍保持“代码路径已接入但不能误标完成”的状态，因为当前没有真实 AI 凭证
